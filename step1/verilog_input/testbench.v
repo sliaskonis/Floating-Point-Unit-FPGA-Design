@@ -31,6 +31,7 @@ reg [31:0] correctOut;
 
 	initial
 		begin
+
 			clk=0;
 			rst=0;
 			#(`CYCLE) rst = 1;
@@ -47,6 +48,7 @@ reg [31:0] correctOut;
 				    
 				    if (out != correctOut) begin
 				        $display ("Error at input %d. Out was %h instead of %h\n", i, out, correctOut);
+						$display ("Expected mantissa: %b\n", correctOut[22:0]);
                         errors = errors + 1;
 				    end
 				end

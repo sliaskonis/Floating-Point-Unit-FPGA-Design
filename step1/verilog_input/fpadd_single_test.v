@@ -19,7 +19,14 @@ module fpadd_single (input clk,
                      input [31:0]reg_A, 
                      input [31:0]reg_B,  
 		     output reg[31:0] out);
-				     	
+
+	reg [31:0] A, B;	// Inputs
+	reg [31:0] result;	// Output
+	reg sign_A, sign_B;	// Sign bits
+	reg [7:0] exp_A, exp_B, diff_exp, exp;	// Exponent bits
+	reg [22:0] mantissa_A, mantissa_B, mantissa_temp;	// Mantissa bits
+	reg [7:0] temp_A, temp_B;	// Temporary variables
+	
 	// Register the two inputs, and use A and B in the combinational logic. 
 	always @ (posedge clk or posedge reset)
 		begin
@@ -32,56 +39,60 @@ module fpadd_single (input clk,
 					out <= result;
 				end
 		end
-		
+
 	//Combinational Logic to (a) compare and adjust the exponents, 
 	//                       (b) shift appropriately the mantissa if necessary, 
 	//                       (c) add the two mantissas, and
 	//                       (d) perform post-normalization. 
 	//                           Make sure to check explicitly for zero output. 
-	always@ (*)
+	always@ (A or B)
 		begin
-			// Extract the sign, exponent, and mantissa of A and B
-			// Sign
-			assign sign_A = A[31];
-			assign sign_B = B[31];
-			// Exponent
-			assign exp_A = A[30:23];
-			assign exp_B = B[30:23];
-			// Mantissa
-			assign mantissa_A = A[22:0];
-			assign mantissa_B = B[22:0];
+			// Find the larger number and extract sign, exponent and mantissa for A and B
+			temp_A = A[30:23];
+			temp_B = B[30:23];
+			if (temp_A >= temp_B && A[31] < B[31]) begin
+				sign_A = A[31];
+				sign_B = B[31];
+				exp_A = A[30:23];
+				exp_B = B[30:23];
+				mantissa_A = A[22:0];
+				mantissa_B = B[22:0];
+			end
+			else begin
+				sign_A = B[31];
+				sign_B = A[31];
+				exp_A = B[30:23];
+				exp_B = A[30:23];
+				mantissa_A = B[22:0];
+				mantissa_B = A[22:0];
+			end
+
+			// Compare and adjust the exponents, mantissa
+			diff_exp = exp_A - exp_B;
+			if (diff_exp != 0) begin
+				mantissa_B = mantissa_B >> 1 | 23'b10000000000000000000000;
+				diff_exp = diff_exp - 1'b1;
+			end
+			mantissa_B = (mantissa_B >> diff_exp);
+			exp = exp_A;
+
+			// Add the mantissas
+			if (sign_A == sign_B)
+					mantissa_temp = mantissa_A + mantissa_B;
+			else begin
+				mantissa_temp = mantissa_A - mantissa_B;
+				if (exp_A == exp_B && mantissa_temp == 0)
+					exp = 8'b00000000;
+			end
+
+			// Post-normalization
+			// ...
 			
-			assign final_mantissa_A = (sign_A == 1'b1) ? -mantissa_A : mantissa_A;
-			assign final_mantissa_B = (sign_B == 1'b1) ? -mantissa_B : mantissa_B;
-
-			if (exp_A > exp_B)
-				begin
-					// Shift the mantissa of B to the right by exp_A-exp_B bits
-					assign mantissa_B_shifted = final_mantissa_B >> (exp_A - exp_B);
-					// The new exponent is the same as the larger exponent
-					assign new_exp = exp_A;
-					// The new mantissa is the sum of the two mantissas 
-					assign sum = final_mantissa_A + mantissa_B_shifted;		
-				end				
-			else if (exp_A < exp_B)
-				begin
-					// Shift the mantissa of A to the right by exp_B-exp_A bits
-					assign mantissa_A_shifted = final_mantissa_A >> (exp_B - exp_A);
-					// The new exponent is the same as the larger exponent
-					assign new_exp = exp_B;
-					// The new mantissa is the sum of the two mantissas
-					assign sum = mantissa_A_shifted + final_mantissa_B;		
-				end
+			// Check for zero output
+			if (mantissa_temp == 0 && exp == 0)
+				result = 32'b0;
 			else
-				begin
-					// The new exponent is the same as the larger exponent
-					assign new_exp = exp_A;
-					// The new mantissa is the sum of the two mantissas
-					assign sum = final_mantissa_A + final_mantissa_B;		
-				end
-
-				
+				result = {sign_A, exp, mantissa_temp};
 		end
-
 
 endmodule
