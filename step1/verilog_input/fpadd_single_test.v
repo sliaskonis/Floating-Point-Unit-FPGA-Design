@@ -39,12 +39,16 @@ module fpadd_single (input clk,
 					out <= result;
 				end
 		end
+<<<<<<< HEAD:step1/verilog_input/fpadd_single_test.v
 
+=======
+>>>>>>> refs/remotes/origin/main:step1/verilog_input/fpadd_single.v
 	//Combinational Logic to (a) compare and adjust the exponents, 
 	//                       (b) shift appropriately the mantissa if necessary, 
 	//                       (c) add the two mantissas, and
 	//                       (d) perform post-normalization. 
 	//                           Make sure to check explicitly for zero output. 
+<<<<<<< HEAD:step1/verilog_input/fpadd_single_test.v
 	always@ (A or B)
 		begin
 			// Find the larger number and extract sign, exponent and mantissa for A and B
@@ -94,5 +98,60 @@ module fpadd_single (input clk,
 			else
 				result = {sign_A, exp, mantissa_temp};
 		end
+=======
+
+	reg [31:0] A, B;
+	reg sign_A, sign_B;
+	reg [7:0] exp_A, exp_B;
+	reg [23:0] mantissa_A, mantissa_B;
+	reg [24:0] sum;
+	reg [31:0] result;
+
+	wire max_sign = (exp_A > exp_B) ? sign_A :
+					(mantissa_A > mantissa_B) ? sign_A :
+					sign_B;
+
+	wire max_exp = (exp_A > exp_B) ? exp_A : exp_B;
+
+	always@ (*)
+	begin
+		// Extract the sign, exponent, and mantissa of A and B
+		// Sign
+		sign_A = A[31];
+		sign_B = B[31];
+		// Exponent
+		exp_A = A[30:23];
+		exp_B = B[30:23];
+		// Mantissa
+		mantissa_A = {1'b1, A[22:0]};
+		mantissa_B = {1'b1, B[22:0]};
+	end
+
+	always @(*) 
+	begin
+		mantissa_A_shifted = (exp_A < exp_B) ? mantissa_A : mantissa_A >> (exp_B - exp_A);
+		mantissa_B_shifted = (exp_A > exp_B) ? mantissa_B : mantissa_B >> (exp_A - exp_B);
+		new_exp = (exp_A > exp_B) ? sign_A : sign_B;
+	end
+
+	always @(*)
+	begin
+		sum = (sign_A ^ sign_B)    ? mantissa_A_shifted + mantissa_B_shifted :
+			  (sign_A & (~sign_B)) ? mantissa_A_shifted - mantissa_B_shifted :
+			  (~(sign_A) & sign_B) ? mantissa_B_shifted - mantissa_A_shifted ;
+	end
+
+	always @(*)
+	begin
+		if(sum[24])
+		begin
+			result = {max_sign, max_exp, sum[23:1]};
+		end
+		else
+		begin
+			result = {max_sign, max_exp, sum[22:0]};
+		end
+	end
+>>>>>>> refs/remotes/origin/main:step1/verilog_input/fpadd_single.v
 
 endmodule
