@@ -83,7 +83,7 @@ module fpadd_single (input clk,
 		end
 
 	// Add the mantissas 
-	always @(mantissa_A or mantissa_B)
+	always @(mantissa_A or mantissa_B or exp_A or exp_B or sign_A or sign_B)
 		begin
 			// Add the mantissas
 			if (sign_A == sign_B)
@@ -96,7 +96,7 @@ module fpadd_single (input clk,
 		end
 
 	// Post-normalization and output
-	always @(mantissa_temp)
+	always @(mantissa_temp or exp)
 		begin
 			if (mantissa_temp[24] == 1) begin
 				mantissa_temp = mantissa_temp >> 1;
