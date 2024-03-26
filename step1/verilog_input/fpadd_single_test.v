@@ -90,13 +90,7 @@ module fpadd_single (input clk,
 					mantissa_temp = newMantissaA + newMantissaB;
 				end
 				else begin
-					// Check which number is larger
-					if (newMantissaA > newMantissaB) begin
-						mantissa_temp = newMantissaA - newMantissaB;
-					end
-					else begin
-						mantissa_temp = newMantissaB - newMantissaA;
-					end
+					mantissa_temp = newMantissaA - newMantissaB;
 					if (exp_A == exp_B && mantissa_temp == 0)
 						exp = 8'b00000000;
 				end
