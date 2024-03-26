@@ -47,16 +47,9 @@ reg [31:0] correctOut;
 				    #(`CYCLE<<1) $display ("A=%h,B=%h,out=%h, correctOut=%h\n",A, B, out, correctOut);
 				    
 				    if (out != correctOut) begin
-				        $display ("Error at input %d. Out was %h instead of %h\n", i, out, correctOut);
-						$display("Exprected exponent: %b\n", correctOut[30:23]);
-						$display ("Expected mantissa: %b\n", correctOut[22:0]);
-						
+				        $display ("Error at input %d. Out was %h instead of %h\n", i, out, correctOut);		
                         errors = errors + 1;
 				    end
-					else begin
-						$display("Exprected exponent: %b\n", correctOut[30:23]);
-						$display ("Expected mantissa: %b\n", correctOut[22:0]);
-					end
 				end
 			$display ("Num of Errors = %4d\n", errors);
 			$finish;
