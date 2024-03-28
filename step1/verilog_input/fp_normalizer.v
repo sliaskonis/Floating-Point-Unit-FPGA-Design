@@ -5,14 +5,16 @@ module fp_normalizer (
   output reg [7:0] normalized_exp
 );
 
-  always @(mantissa_temp, exp) begin
-    if (mantissa_temp[24] == 1) begin
+  always @(mantissa_temp) begin
+    if (mantissa_temp == 0) begin
+      normalized_mantissa = 23'b0;
+      normalized_exp = 8'b0;
+    end
+    else if (mantissa_temp[24] == 1) begin
 				normalized_mantissa = mantissa_temp[23:1];
 				normalized_exp = exp + 1;
 			end
-    else
-    begin
-      $display("[Normalizer] mantissa_temp: %h\n",mantissa_temp);
+    else begin
       case (mantissa_temp[23:0])
         24'b1xxxxxxxxxxxxxxxxxxxxxxx: begin
           normalized_mantissa = mantissa_temp;
@@ -110,20 +112,7 @@ module fp_normalizer (
           normalized_mantissa = {mantissa_temp[0], 23'b0};
           normalized_exp = exp - 23;
         end
-        24'b0000_0000_0000_0000_0000_0000: begin
-          normalized_mantissa = 24'b0;
-          normalized_exp = 8'b0;
-        end
-        //default:
-        //begin
-        //  normalized_mantissa = 24'b0000000000;
-        //  normalized_exp = 8'b0;
-        //end
       endcase
     end
   end
-      
-
-
-
 endmodule

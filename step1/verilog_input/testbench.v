@@ -49,6 +49,8 @@ reg [31:0] correctOut;
 				    if (out != correctOut) begin
 				        $display ("Error at input %d. Out was %h instead of %h\n", i, out, correctOut);		
                         errors = errors + 1;
+						$display ("Expec Mantissa: %b\n", correctOut[22:0]);
+						$display ("Expec Exponent: %b\n", correctOut[30:23]);
 				    end
 				end
 			$display ("Num of Errors = %4d\n", errors);

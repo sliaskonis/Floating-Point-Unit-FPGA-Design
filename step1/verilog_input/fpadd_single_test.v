@@ -37,12 +37,11 @@ module fpadd_single (input clk,
 				B <= 32'b0;
 				out <= 32'b0;
 			end
-			else
-				begin
-					A <= reg_A;
-					B <= reg_B;
-					out <= result;
-				end
+			else begin
+				A <= reg_A;
+				B <= reg_B;
+				out <= result;
+			end
 		end
 
 	//Combinational Logic to (a) compare and adjust the exponents, 
@@ -88,21 +87,19 @@ module fpadd_single (input clk,
 			// Add the mantissas
 			if (sign_A == sign_B) begin
 				mantissa_temp = mantissa_A + mantissa_B_shifted;
-				exp = exp_A;
 			end
 			else begin
 				mantissa_temp = mantissa_A - mantissa_B_shifted;
-				exp = exp_A;
 			end
 		end
 	
-	//always @(exp_A or exp_B or mantissa_temp)
-	//begin
-	//	if (exp_A == exp_B && mantissa_temp == 0)
-	//		exp = 8'b00000000;
-	//	else
-	//		exp = exp_A;
-	//end
+	always @(exp_A or exp_B or mantissa_temp)
+	begin
+		if (exp_A == exp_B && mantissa_temp == 0 && sign_A != sign_B)
+			exp = 8'b00000000;
+		else
+			exp = exp_A;
+	end
 
 
 	wire [7:0] normalized_exp;
@@ -113,25 +110,25 @@ module fpadd_single (input clk,
 								.normalized_exp(normalized_exp));
 
 	// Post-normalization and output
-	always @(normalized_exp or normalized_mantissa)
-		begin
-			//if (mantissa_temp[24] == 1) begin
-			//	mantissa_final = mantissa_temp >> 1;
-			//	final_exp = exp + 1;
-			//end
-			//else begin
-				//final_exp = exp;
-				//mantissa_final = mantissa_temp;
-				//while (mantissa_final[23] == 0 && mantissa_final != 0) begin
-				//	mantissa_final = mantissa_final << 1;
-				//	final_exp = final_exp - 1;
-				//end
-				final_exp = normalized_exp;
-				mantissa_final = normalized_mantissa;
-			//end
-		end
+	// always @(*)
+	// 	begin
+	// 		if (mantissa_temp[24] == 1) begin
+	// 			mantissa_final = mantissa_temp >> 1;
+	// 			final_exp = exp + 1;
+	// 		end
+	// 		else begin
+	// 			final_exp = exp;
+	// 			mantissa_final = mantissa_temp;
+	// 			while (mantissa_final[23] == 0 && mantissa_final != 0) begin
+	// 				mantissa_final = mantissa_final << 1;
+	// 				final_exp = final_exp - 1;
+	// 			end
+	// 			// final_exp = normalized_exp;
+	// 			// mantissa_final = normalized_mantissa;
+	// 		end
+	// 	end
 
-		always @(*)
+		always @(normalized_exp or normalized_mantissa)
 		begin
 			if (A == 32'b0)
 				result = B;
@@ -140,7 +137,7 @@ module fpadd_single (input clk,
 			else if (mantissa_temp == 0 && exp == 0)
 				result = 32'b0;
 			else
-				result = {sign_A, final_exp, mantissa_final[22:0]};
+				result = {sign_A, normalized_exp, normalized_mantissa};
 		end
 
 endmodule
