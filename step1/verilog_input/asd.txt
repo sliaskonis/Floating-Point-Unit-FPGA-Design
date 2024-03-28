@@ -1,8 +1,0 @@
-A=bfc66666,B=3fc7ae14,out=42800000, correctOut=3c23d700
-
-
-mantissa temp: 00147ae
-
-Error at input           5. Out was 42800000 instead of 3c23d700
-                                    0 10000101 00000000000000000000000
-                                    0 01111000 01000111101011100000000
