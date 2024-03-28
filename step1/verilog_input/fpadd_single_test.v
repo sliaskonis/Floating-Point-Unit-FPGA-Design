@@ -33,8 +33,8 @@ module fpadd_single (input clk,
 		begin
 			if (reset == 1'b1)
 			begin
-			    A <= 32'b0;
-			    B <= 32'b0;
+				A <= 32'b0;
+				B <= 32'b0;
 				out <= 32'b0;
 			end
 			else
@@ -57,8 +57,8 @@ module fpadd_single (input clk,
 	
 	always@ (*)
 		begin
-			/*if (A == 32'b0 || B == 32'b0)
-			begin
+			// Find the larger number and extract sign, exponent and mantissa for A and B
+			if (temp_exp_A > temp_exp_B || (temp_exp_A == temp_exp_B && temp_mantissa_A >= temp_mantissa_B)) begin	// A >= B
 				sign_A = A[31];
 				sign_B = B[31];
 				exp_A = A[30:23];
@@ -66,25 +66,14 @@ module fpadd_single (input clk,
 				mantissa_A = {2'b01, A[22:0]};
 				mantissa_B = {2'b01, B[22:0]};
 			end
-			else begin		*/
-				// Find the larger number and extract sign, exponent and mantissa for A and B
-				if (temp_exp_A > temp_exp_B || (temp_exp_A == temp_exp_B && temp_mantissa_A >= temp_mantissa_B)) begin	// A >= B
-					sign_A = A[31];
-					sign_B = B[31];
-					exp_A = A[30:23];
-					exp_B = B[30:23];
-					mantissa_A = {2'b01, A[22:0]};
-					mantissa_B = {2'b01, B[22:0]};
-				end
-				else begin																								// B > A
-					sign_A = B[31];
-					sign_B = A[31];
-					exp_A = B[30:23];
-					exp_B = A[30:23];
-					mantissa_A = {2'b01, B[22:0]};
-					mantissa_B = {2'b01, A[22:0]};
-				end
-			//end
+			else begin																								// B > A
+				sign_A = B[31];
+				sign_B = A[31];
+				exp_A = B[30:23];
+				exp_B = A[30:23];
+				mantissa_A = {2'b01, B[22:0]};
+				mantissa_B = {2'b01, A[22:0]};
+			end
 		end
 	
 	always @(*)
@@ -94,49 +83,52 @@ module fpadd_single (input clk,
 	end
 
 	// Add the mantissas 
-	always @(mantissa_A or mantissa_B_shifted or exp_A or exp_B or sign_A or sign_B)
+	always @(mantissa_A or mantissa_B_shifted or sign_A or sign_B or exp_A or exp_B)
 		begin
 			// Add the mantissas
-			if (sign_A == sign_B)
+			if (sign_A == sign_B) begin
 				mantissa_temp = mantissa_A + mantissa_B_shifted;
+				exp = exp_A;
+			end
 			else begin
 				mantissa_temp = mantissa_A - mantissa_B_shifted;
+				exp = exp_A;
 			end
 		end
 	
-	always @(*)
-	begin
-		if (exp_A == exp_B && mantissa_temp == 0)
-			exp = 8'b00000000;
-		else
-			exp = exp_A;
-	end
+	//always @(exp_A or exp_B or mantissa_temp)
+	//begin
+	//	if (exp_A == exp_B && mantissa_temp == 0)
+	//		exp = 8'b00000000;
+	//	else
+	//		exp = exp_A;
+	//end
 
 
 	wire [7:0] normalized_exp;
-	wire [23:0] normalized_mantissa;
-	fp_normalizer fp_normalizer(.mantissa_temp(mantissa_temp[23:0]),
+	wire [22:0] normalized_mantissa;
+	fp_normalizer fp_normalizer(.mantissa_temp(mantissa_temp),
 								.exp(exp),
 								.normalized_mantissa(normalized_mantissa),
 								.normalized_exp(normalized_exp));
 
 	// Post-normalization and output
-	always @(*)
+	always @(normalized_exp or normalized_mantissa)
 		begin
-			if (mantissa_temp[24] == 1) begin
-				mantissa_final = mantissa_temp >> 1;
-				final_exp = exp + 1;
-			end
-			else begin
-				final_exp = exp;
-				mantissa_final = mantissa_temp;
-				while (mantissa_final[23] == 0 && mantissa_final != 0) begin
-					mantissa_final = mantissa_final << 1;
-					final_exp = final_exp - 1;
-				end
-				//final_exp = normalized_exp;
-				//mantissa_final = normalized_mantissa;
-			end
+			//if (mantissa_temp[24] == 1) begin
+			//	mantissa_final = mantissa_temp >> 1;
+			//	final_exp = exp + 1;
+			//end
+			//else begin
+				//final_exp = exp;
+				//mantissa_final = mantissa_temp;
+				//while (mantissa_final[23] == 0 && mantissa_final != 0) begin
+				//	mantissa_final = mantissa_final << 1;
+				//	final_exp = final_exp - 1;
+				//end
+				final_exp = normalized_exp;
+				mantissa_final = normalized_mantissa;
+			//end
 		end
 
 		always @(*)

@@ -45,7 +45,6 @@ reg [31:0] correctOut;
 				    correctOut = FPVal[32-1:0]; 
 				    
 				    #(`CYCLE<<1) $display ("A=%h,B=%h,out=%h, correctOut=%h\n",A, B, out, correctOut);
-					$display("\nmantissa temp: %h\n", DUT.mantissa_temp);
 				    
 				    if (out != correctOut) begin
 				        $display ("Error at input %d. Out was %h instead of %h\n", i, out, correctOut);		
