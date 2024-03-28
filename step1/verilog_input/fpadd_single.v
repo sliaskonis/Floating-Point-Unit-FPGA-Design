@@ -81,7 +81,7 @@ module fpadd_single (input clk,
 	end
 
 	// Add the mantissas 
-	always @(mantissa_A or mantissa_B_shifted)
+	always @(mantissa_A or mantissa_B_shifted or sign_A or sign_B)
 		begin
 			if (sign_A == sign_B)
 				mantissa_temp = mantissa_A + mantissa_B_shifted;
@@ -90,7 +90,7 @@ module fpadd_single (input clk,
 		end
 	
 	// ???
-	always @(exp_A or exp_B or mantissa_temp)
+	always @(exp_A or exp_B or mantissa_temp or sign_A or sign_B)
 	begin
 		if (exp_A == exp_B && mantissa_temp == 0 && sign_A != sign_B)
 			exp = 8'b00000000;
@@ -106,7 +106,7 @@ module fpadd_single (input clk,
 								.normalized_exp(normalized_exp));
 
 	// Combine the sign, exponent, and mantissa to form the result
-	always @(normalized_exp or normalized_mantissa)
+	always @(normalized_exp or normalized_mantissa or A or B or mantissa_temp or exp or sign_A)
 	begin
 		if (A == 32'b0)
 			result = B;
@@ -119,3 +119,4 @@ module fpadd_single (input clk,
 	end
 
 endmodule
+
