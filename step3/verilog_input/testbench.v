@@ -31,6 +31,9 @@ wire an1, a1, b1, c1, d1, e1, f1, g1, fp1;
 			#(`CYCLE) rst = 1;
 			#(`CYCLE) rst = 0;
             $display("Starting testbench");
+            #(`CYCLE) $display("LED values: %b %b %b %b %b %b %b %b", DUT2.a0, DUT2.b0, DUT2.c0, DUT2.d0, DUT2.e0, DUT2.f0, DUT2.g0, DUT2.fp0);
+            $display("LED values: %b", out);
+            #(`CYCLE*NUM) $finish;
 		end
         
 	always

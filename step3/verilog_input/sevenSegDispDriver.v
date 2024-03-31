@@ -45,7 +45,7 @@ assign char1 = char[3:0];
 LEDdecoder LEDdecoder0(char0, digit1);
 LEDdecoder LEDdecoder1(char1, digit2);
 
-always @(an0 or an1)
+always @(an0 or an1 or digit1 or digit2)
 begin
     if (an0 == 0)
         LED = digit1;

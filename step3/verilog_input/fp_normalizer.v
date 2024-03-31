@@ -38,7 +38,7 @@ module fp_normalizer (
         else zero_count = 24; // All bits are zero
     end
 
-    always @(mantissa_temp or zero_count) begin
+    always @(mantissa_temp or zero_count or exp) begin
       if (zero_count == 24) begin
         normalized_mantissa = 0;
         normalized_exp = 0;
