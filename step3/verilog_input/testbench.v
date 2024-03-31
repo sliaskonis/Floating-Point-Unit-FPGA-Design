@@ -31,9 +31,12 @@ wire an1, a1, b1, c1, d1, e1, f1, g1, fp1;
 			#(`CYCLE) rst = 1;
 			#(`CYCLE) rst = 0;
             $display("Starting testbench");
-            #(`CYCLE) $display("LED values: %b %b %b %b %b %b %b %b", DUT2.a0, DUT2.b0, DUT2.c0, DUT2.d0, DUT2.e0, DUT2.f0, DUT2.g0);
-            $display("LED values: %b", out);
-            #(`CYCLE*NUM) $finish;
+            #(`CYCLE) $display("LED values: %b %b %b %b %b %b %b", DUT2.a0, DUT2.b0, DUT2.c0, DUT2.d0, DUT2.e0, DUT2.f0, DUT2.g0);
+            #(`CYCLE*NUM) $display("LED values: %b %b %b %b %b %b %b", DUT2.a0, DUT2.b0, DUT2.c0, DUT2.d0, DUT2.e0, DUT2.f0, DUT2.g0);
+			$monitor("LED1 values: %b %b %b %b %b %b %b", DUT2.a0, DUT2.b0, DUT2.c0, DUT2.d0, DUT2.e0, DUT2.f0, DUT2.g0);
+			// $monitor("LED2 values: %b %b %b %b %b %b %b", DUT2.a1, DUT2.b1, DUT2.c1, DUT2.d1, DUT2.e1, DUT2.f1, DUT2.g1);
+			// $monitor("Anodes: %b %b", DUT2.an0, DUT2.an1);
+			#(`CYCLE*1000) $finish;
 		end
         
 	always

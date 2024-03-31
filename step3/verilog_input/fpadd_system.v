@@ -17,8 +17,8 @@
    // 6b64b235 + 6ac49214 = 6ba37d9f 
 
    // Instantiate the FP adder 
-   fpadd_pipelined fpadd_pipelined(.clk(clk), .reset(rst), .reg_A(32'b01101011010010110010001101010011), .reg_B(32'b01101010110001001001001000010100), .out(fp_out));
-
+   fpadd_pipelined fpadd_pipelined(.clk(clk), .reset(rst), .reg_A(32'b01101011011001001011001000110101), .reg_B(32'b01101010110001001001001000010100), .out(fp_out));
+                                                                                                             
    assign leds = fp_out[7:0];
    assign char0 = fp_out[31:24];
    assign char1 = fp_out[23:16];
@@ -28,7 +28,10 @@
 
    // Instantiate the 7segment display output 0 
    sevenSegDispDriver sevenSegDispDriver0(.char(char0), .an0(an0), .an1(an1), .LED({a0, b0, c0, d0, e0, f0, g0}));
-   
+   always @(fp_out)
+       begin
+          $display("Output %h\n", fp_out);
+       end
    // Instantiate the 7segment display output 1
    sevenSegDispDriver sevenSegDispDriver1(.char(char1), .an0(an0), .an1(an1), .LED({a1, b1, c1, d1, e1, f1, g1}));
    

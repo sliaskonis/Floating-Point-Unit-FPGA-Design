@@ -28,8 +28,8 @@ begin
         an1 = 1;
     end
     else if (count == 5'b01111) begin
-        an1 = 1;
-        an0 = 0;
+        an0 = 1;
+        an1 = 0;
     end
     else begin
         an0 = 1;
