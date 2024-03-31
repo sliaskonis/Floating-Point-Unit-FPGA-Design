@@ -298,7 +298,7 @@ set_property IOSTANDARD LVCMOS33 [get_ports e1]
 set_property IOSTANDARD LVCMOS33 [get_ports f1]
 set_property IOSTANDARD LVCMOS33 [get_ports g1]
 
-set_property PACKAGE_PIN XXX [get_ports an0]
+set_property PACKAGE_PIN V4 [get_ports an0]
 set_property PACKAGE_PIN AB7 [get_ports a0]
 set_property PACKAGE_PIN AB6 [get_ports b0]
 set_property PACKAGE_PIN Y4  [get_ports c0]
