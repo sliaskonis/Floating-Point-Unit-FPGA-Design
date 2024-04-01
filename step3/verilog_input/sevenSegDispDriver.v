@@ -30,29 +30,28 @@ begin
 end
 endmodule
 
-module sevenSegDispDriver(char, an0, an1, LED);
+module sevenSegDispDriver(char, count, an0, an1, LED);
 
 input [7:0] char;
+input [4:0] count;
 input an0, an1;
 output reg [6:0] LED;
 
-wire [6:0] digit1, digit2;
+wire [6:0] digit0, digit1;
 wire [3:0] char0, char1;
 
 assign char0 = char[7:4];
 assign char1 = char[3:0];
 
-LEDdecoder LEDdecoder0(char0, digit1);
-LEDdecoder LEDdecoder1(char1, digit2);
+LEDdecoder LEDdecoder0(char0, digit0);
+LEDdecoder LEDdecoder1(char1, digit1);
 
-always @(an0 or an1 or digit1 or digit2)
+always @(/*an0 or an1 or*/ digit0 or digit1 or count[4])
 begin
-    if (an0 == 0)
-        LED = digit1;
-    else if (an1 == 0)
-        LED = digit2;
+    if (count[4] == 1'b1)
+        LED = digit0;
     else
-        LED = 7'b1111111;
+        LED = digit1;
 end
 endmodule
 
