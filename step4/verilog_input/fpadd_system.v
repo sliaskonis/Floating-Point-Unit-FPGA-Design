@@ -5,19 +5,19 @@
  */ 
  module fpadd_system (input clk,
                       input rst, 
-                      // input noisy_level, 
+                      input button_in, 
                       output [7:0] leds, 
                       output an0, output a0, output b0, output c0, output d0, output e0, output f0, output g0,
                       output an1, output a1, output b1, output c1, output d1, output e1, output f1, output g1);
 
-   wire button_in, button_out;
+   wire button_out;
 
    wire [31:0] in_A, in_B, fp_out;
    wire [7:0] char0, char1;
 
    button_control button_control(.clk(clk), .button_in(button_in), .button_out(button_out));
 
-   DataMemory data_memory(.clk(clk), .rst(rst), .button(button_out), .out_a(), .out_b());
+   DataMemory data_memory(.clk(clk), .rst(rst), .button(button_out), .out_a(in_A), .out_b(in_B));
 
    // Try this addition of FP numbers 
    // 6b64b235 + 6ac49214 = 6ba37d9f 

@@ -7,7 +7,7 @@ output wire [31:0] out_a, out_b;
 parameter NUM = 10;
 
 reg [3:0] count;
-reg [NUM-1:0] mem [63:0];
+reg [63:0] mem [0:NUM-1];
 
 // Memory
 always @(posedge clk or posedge rst) begin
@@ -38,6 +38,6 @@ always @(posedge clk or posedge rst) begin
 end
 
 assign out_a = mem[count][63:32];
-assign out_a = mem[count][31:0];
+assign out_b = mem[count][31:0];
 
 endmodule
