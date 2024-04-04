@@ -22,10 +22,10 @@ module fpadd_pipelined (input clk,
 
 	reg [31:0] A, B;	// Inputs
 	reg [31:0] result;	// Output
-	reg sign_A, sign_B;	// Sign bits
-	reg [7:0] exp_A, exp_B, exp;	// Exponent bits
+	reg sign_A, sign_B, reg_sign_A, reg_sign_B;	// Sign bits
+	reg [7:0] exp_A, exp_B, exp, reg_exp_A, reg_exp_B;	// Exponent bits
 	reg [22:0] temp_mantissa_A, temp_mantissa_B;	// Mantissa bits
-	reg [24:0] mantissa_temp, mantissa_A, mantissa_B, mantissa_B_shifted;	// New mantissas
+	reg [24:0] mantissa_temp, mantissa_A, mantissa_B, mantissa_B_shifted, reg_mantissa_A, reg_mantissa_B_shifted;	// New mantissas
 	reg [7:0] temp_exp_A, temp_exp_B;	// Temporary variables
 	reg [24:0] NORMMEM_mantissa_temp;	// Normalized mantissa
 	reg [7:0] NORMMEM_exp;	// Normalized exponent
@@ -81,22 +81,42 @@ module fpadd_pipelined (input clk,
 		mantissa_B_shifted = (mantissa_B >> (exp_A - exp_B));
 	end
 
+	always @(posedge clk or posedge reset) begin
+		if(reset) begin
+			reg_mantissa_A <= 0;
+			reg_mantissa_B_shifted <= 0;
+			reg_exp_A <= 0;
+			reg_exp_B <= 0;
+			reg_sign_A <= 0;
+			reg_sign_B <= 0;
+		end
+		else begin
+			reg_mantissa_A <= mantissa_A;
+			reg_mantissa_B_shifted <= mantissa_B_shifted;
+			reg_exp_A <= exp_A;
+			reg_exp_B <= exp_B;
+			reg_sign_A <= sign_A;
+			reg_sign_B <= sign_B;
+		end
+		
+	end
+
 	// Add the mantissas 
-	always @(mantissa_A or mantissa_B_shifted or sign_A or sign_B)
+	always @(reg_mantissa_A or reg_mantissa_B_shifted or reg_sign_A or reg_sign_B)
 		begin
-			if (sign_A == sign_B)
-				mantissa_temp = mantissa_A + mantissa_B_shifted;
+			if (reg_sign_A == reg_sign_B)
+				mantissa_temp = reg_mantissa_A + reg_mantissa_B_shifted;
 			else
-				mantissa_temp = mantissa_A - mantissa_B_shifted;
+				mantissa_temp = reg_mantissa_A - reg_mantissa_B_shifted;
 		end
 	
 	// ???
-	always @(exp_A or exp_B or mantissa_temp or sign_A or sign_B)
+	always @(reg_exp_A or reg_exp_B or mantissa_temp or reg_sign_A or reg_sign_B)
 	begin
-		if (exp_A == exp_B && mantissa_temp == 0 && sign_A != sign_B)
+		if (reg_exp_A == reg_exp_B && mantissa_temp == 0 && reg_sign_A != reg_sign_B)
 			exp = 8'b00000000;
 		else
-			exp = exp_A;
+			exp = reg_exp_A;
 	end
 
 	// Normalize pipelined
@@ -113,13 +133,13 @@ module fpadd_pipelined (input clk,
 
 	wire [7:0] normalized_exp;
 	wire [22:0] normalized_mantissa;
-	fp_normalizer fp_normalizer(.mantissa_temp(NORMMEM_mantissa_temp),
-								.exp(NORMMEM_exp),
+	fp_normalizer fp_normalizer(.mantissa_temp(mantissa_temp),
+								.exp(exp),
 								.normalized_mantissa(normalized_mantissa),
 								.normalized_exp(normalized_exp));
 
 	// Combine the sign, exponent, and mantissa to form the result
-	always @(normalized_exp or normalized_mantissa or A or B or mantissa_temp or exp or sign_A)
+	always @(normalized_exp or normalized_mantissa or A or B or mantissa_temp or exp or reg_sign_A)
 	begin
 		if (A == 32'b0)
 			result = B;
@@ -128,7 +148,7 @@ module fpadd_pipelined (input clk,
 		else if (mantissa_temp == 0 && exp == 0)
 			result = 32'b0;
 		else
-			result = {sign_A, normalized_exp, normalized_mantissa};
+			result = {reg_sign_A, normalized_exp, normalized_mantissa};
 	end
 
 endmodule

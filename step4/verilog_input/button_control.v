@@ -1,11 +1,12 @@
 module button_control (clk, reset, button_in, button_out);
 
 input clk, reset, button_in;
-output wire button_out;
+output reg button_out;
 
 reg [1:0] next_state, current_state;
 // reg q1, q2;
 reg [23:0] counter;
+reg l2p_in;
 
 parameter [1:0] idle = 2'b00,
                 pressed = 2'b01,
@@ -23,8 +24,11 @@ always @(posedge clk or posedge reset) begin
         counter <= 24'b0;
 end
 
-awlays @(counter) begin
-    l2p_in = (counter == 24'd10000000);
+always @(counter) begin
+    if(counter == 24'd10000000)
+        l2p_in = 1'b1;
+    else
+        l2p_in = 1'b0;
 end
 
 // awlays @(posedge clk) begin
@@ -38,7 +42,7 @@ end
 // assign l2p_in = q1 & q2;
 
 // FSM type: Moore Machine
-awlays @(posedge clk or posedge reset) begin
+always @(posedge clk or posedge reset) begin
     if (reset) current_state <= idle;
     else current_state <= next_state;
 end
@@ -59,6 +63,10 @@ always @(current_state or l2p_in) begin
         button_out = 1'b0;
         if (l2p_in == 1'b1) next_state = pressed_2;
         else next_state = idle;
+    end
+    2'b11: begin    //default case
+        button_out = 1'b0;
+        next_state = idle;
     end
     endcase
 end

@@ -15,7 +15,7 @@
    wire [31:0] in_A, in_B, fp_out;
    wire [7:0] char0, char1;
 
-   button_control button_control(.clk(clk), .button_in(button_in), .button_out(button_out));
+   button_control button_control(.clk(clk), .reset(rst), .button_in(button_in), .button_out(button_out));
 
    DataMemory data_memory(.clk(clk), .rst(rst), .button(button_out), .out_a(in_A), .out_b(in_B));
 
