@@ -13,19 +13,12 @@
    wire [31:0] fp_out;
    wire [7:0] char0, char1;
 
-   // Try this addition of FP numbers 
-   // 6b64b235 + 6ac49214 = 6ba37d9f 
-   // 2ac49214 + 6ac49214 = 6ac49214 <- 
-
    // Instantiate the FP adder 
    fpadd_pipelined fpadd_pipelined(.clk(clk), .reset(rst), .reg_A(32'h2ac49214), .reg_B(32'h6ac49214), .out(fp_out));
                                                                                                              
    assign leds = fp_out[7:0];
    assign char0 = fp_out[31:24];
    assign char1 = fp_out[23:16];
-
-   // Anode driver
-   anodeDriver anodeDriver(.clk(clk), .reset(rst), .an0(an0), .an1(an1));
 
    // Instantiate the 7segment display output 0 
    sevenSegDispDriver sevenSegDispDriver0(.char(char0), .anode(an0), .LED({a0, b0, c0, d0, e0, f0, g0}));

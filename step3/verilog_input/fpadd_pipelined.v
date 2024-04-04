@@ -109,7 +109,7 @@ module fpadd_pipelined (input clk,
 				mantissa_temp = reg_mantissa_A - reg_mantissa_B_shifted;
 		end
 	
-	// ???
+	// Handle exponent of the result
 	always @(reg_exp_A or reg_exp_B or mantissa_temp or reg_sign_A or reg_sign_B)
 	begin
 		if (reg_exp_A == reg_exp_B && mantissa_temp == 0 && reg_sign_A != reg_sign_B)

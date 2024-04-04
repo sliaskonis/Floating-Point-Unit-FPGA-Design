@@ -66,6 +66,6 @@ reg [31:0] correctOut;
 		end
 		
 		// Instantiate the FP Adder 
-		fpadd_single DUT(.clk(clk), .reset(rst), .reg_A(A),.reg_B(B), .out(out));
+		fpadd_pipelined DUT(.clk(clk), .reset(rst), .reg_A(A),.reg_B(B), .out(out));
 		
 endmodule

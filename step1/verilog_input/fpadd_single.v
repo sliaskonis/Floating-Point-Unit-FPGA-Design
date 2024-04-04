@@ -27,7 +27,10 @@ module fpadd_single (input clk,
 	reg [22:0] temp_mantissa_A, temp_mantissa_B;	// Mantissa bits
 	reg [24:0] mantissa_temp, mantissa_A, mantissa_B, mantissa_B_shifted;	// New mantissas
 	reg [7:0] temp_exp_A, temp_exp_B;	// Temporary variables
-	
+
+	wire [7:0] normalized_exp;
+	wire [22:0] normalized_mantissa;
+
 	// Register the two inputs, and use A and B in the combinational logic. 
 	always @ (posedge clk or posedge reset)
 		begin
@@ -82,24 +85,23 @@ module fpadd_single (input clk,
 
 	// Add the mantissas 
 	always @(mantissa_A or mantissa_B_shifted or sign_A or sign_B)
-		begin
-			if (sign_A == sign_B)
-				mantissa_temp = mantissa_A + mantissa_B_shifted;
-			else
-				mantissa_temp = mantissa_A - mantissa_B_shifted;
-		end
-	
-	// ???
+	begin
+		if (sign_A == sign_B)
+			mantissa_temp = mantissa_A + mantissa_B_shifted;
+		else
+			mantissa_temp = mantissa_A - mantissa_B_shifted;
+	end
+
+	// Handle exponent of result
 	always @(exp_A or exp_B or mantissa_temp or sign_A or sign_B)
 	begin
-		if (exp_A == exp_B && mantissa_temp == 0 && sign_A != sign_B)
+		if (exp_A == exp_B && mantissa_temp == 0 && sign_A != sign_B)  // Special case: subtraction of numbers that result to 0
 			exp = 8'b00000000;
 		else
 			exp = exp_A;
 	end
 
-	wire [7:0] normalized_exp;
-	wire [22:0] normalized_mantissa;
+	// Normalize final number
 	fp_normalizer fp_normalizer(.mantissa_temp(mantissa_temp),
 								.exp(exp),
 								.normalized_mantissa(normalized_mantissa),

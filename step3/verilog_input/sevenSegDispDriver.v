@@ -41,16 +41,15 @@ reg [4:0] count;
 
 wire [6:0] digit0, digit1;
 wire [3:0] char0, char1;
+wire [4:0] countNext;                      
 
 assign char0 = char[7:4];
 assign char1 = char[3:0];
+assign countNext = count - 5'b00001;
 
+// Decode each digit
 LEDdecoder LEDdecoder0(char0, digit0);
 LEDdecoder LEDdecoder1(char1, digit1);
-
-wire [4:0] countNext;                       // countNext -> counter's next value
-
-assign countNext = count - 5'b00001;
 
 // Control counter's value
 always @(posedge clk or posedge reset) 

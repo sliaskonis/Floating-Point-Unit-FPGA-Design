@@ -14,7 +14,7 @@
 //  We also assume that the output does not overflow or undeflow, so there is no need to check for these conditions.
 //  An FP32 number has 1 sign bit, 8 exponent bits(biased by 127), and 23 mantissa bits.
 //////////////////////////////////////////////////////////////////////////////////
-module fpadd_single (input clk,
+module fpadd_pipelined (input clk,
                      input reset,
                      input [31:0]reg_A, 
                      input [31:0]reg_B,  
@@ -22,13 +22,15 @@ module fpadd_single (input clk,
 
 	reg [31:0] A, B;	// Inputs
 	reg [31:0] result;	// Output
-	reg sign_A, sign_B;	// Sign bits
-	reg [7:0] exp_A, exp_B, exp;	// Exponent bits
+	reg sign_A, sign_B, reg_sign_A, reg_sign_B;	// Sign bits
+	reg [7:0] exp_A, exp_B, exp, reg_exp_A, reg_exp_B;	// Exponent bits
 	reg [22:0] temp_mantissa_A, temp_mantissa_B;	// Mantissa bits
-	reg [24:0] mantissa_temp, mantissa_A, mantissa_B, mantissa_B_shifted;	// New mantissas
-	reg [7:0] temp_exp_A, temp_exp_B;	// Temporary variables
-	reg [24:0] NORMMEM_mantissa_temp;	// Normalized mantissa
-	reg [7:0] NORMMEM_exp;	// Normalized exponent
+	reg [24:0] mantissa_temp, mantissa_A, mantissa_B, mantissa_B_shifted, reg_mantissa_A, reg_mantissa_B_shifted;	// New mantissas
+	reg [7:0] temp_exp_A, temp_exp_B;	
+
+	wire [7:0] normalized_exp;
+	wire [22:0] normalized_mantissa;
+	
 	// Register the two inputs, and use A and B in the combinational logic. 
 	always @ (posedge clk or posedge reset)
 		begin
@@ -81,45 +83,52 @@ module fpadd_single (input clk,
 		mantissa_B_shifted = (mantissa_B >> (exp_A - exp_B));
 	end
 
-	// Add the mantissas 
-	always @(mantissa_A or mantissa_B_shifted or sign_A or sign_B)
-		begin
-			if (sign_A == sign_B)
-				mantissa_temp = mantissa_A + mantissa_B_shifted;
-			else
-				mantissa_temp = mantissa_A - mantissa_B_shifted;
-		end
-	
-	// ???
-	always @(exp_A or exp_B or mantissa_temp or sign_A or sign_B)
-	begin
-		if (exp_A == exp_B && mantissa_temp == 0 && sign_A != sign_B)
-			exp = 8'b00000000;
-		else
-			exp = exp_A;
-	end
-
-	// Normalize pipelined
+	/****************** PIPELINE ******************/
 	always @(posedge clk or posedge reset) begin
-		if (reset == 1'b1) begin
-			NORMMEM_mantissa_temp <= 25'b0;
-			NORMMEM_exp <= 8'b0;
+		if(reset) begin
+			reg_mantissa_A <= 0;
+			reg_mantissa_B_shifted <= 0;
+			reg_exp_A <= 0;
+			reg_exp_B <= 0;
+			reg_sign_A <= 0;
+			reg_sign_B <= 0;
 		end
 		else begin
-			NORMMEM_mantissa_temp <= mantissa_temp;
-			NORMMEM_exp <= exp;
+			reg_mantissa_A <= mantissa_A;
+			reg_mantissa_B_shifted <= mantissa_B_shifted;
+			reg_exp_A <= exp_A;
+			reg_exp_B <= exp_B;
+			reg_sign_A <= sign_A;
+			reg_sign_B <= sign_B;
 		end
 	end
 
-	wire [7:0] normalized_exp;
-	wire [22:0] normalized_mantissa;
-	fp_normalizer fp_normalizer(.mantissa_temp(NORMMEM_mantissa_temp),
-								.exp(NORMMEM_exp),
+	// Add the mantissas
+	always @(reg_mantissa_A or reg_mantissa_B_shifted or reg_sign_A or reg_sign_B)
+		begin
+			if (reg_sign_A == reg_sign_B)
+				mantissa_temp = reg_mantissa_A + reg_mantissa_B_shifted;
+			else
+				mantissa_temp = reg_mantissa_A - reg_mantissa_B_shifted;
+		end
+
+	// Handle exp result
+	always @(reg_exp_A or reg_exp_B or mantissa_temp or reg_sign_A or reg_sign_B)
+	begin
+		if (reg_exp_A == reg_exp_B && mantissa_temp == 0 && reg_sign_A != reg_sign_B)
+			exp = 8'b00000000;
+		else
+			exp = reg_exp_A;
+	end
+
+	// Normalize final number
+	fp_normalizer fp_normalizer(.mantissa_temp(mantissa_temp),
+								.exp(exp),
 								.normalized_mantissa(normalized_mantissa),
 								.normalized_exp(normalized_exp));
 
 	// Combine the sign, exponent, and mantissa to form the result
-	always @(normalized_exp or normalized_mantissa or A or B or mantissa_temp or exp or sign_A)
+	always @(normalized_exp or normalized_mantissa or A or B or mantissa_temp or exp or reg_sign_A)
 	begin
 		if (A == 32'b0)
 			result = B;
@@ -128,7 +137,7 @@ module fpadd_single (input clk,
 		else if (mantissa_temp == 0 && exp == 0)
 			result = 32'b0;
 		else
-			result = {sign_A, normalized_exp, normalized_mantissa};
+			result = {reg_sign_A, normalized_exp, normalized_mantissa};
 	end
 
 endmodule

@@ -4,7 +4,6 @@ input clk, reset, button_in;
 output reg button_out;
 
 reg [1:0] next_state, current_state;
-// reg q1, q2;
 reg [23:0] counter;
 reg l2p_in;
 
@@ -12,6 +11,10 @@ parameter [1:0] idle = 2'b00,
                 pressed = 2'b01,
                 pressed_2 = 2'b10;
 
+// Debouncer: Count 0.1sec each time the button is pressed.
+//            If 0.1sec are reached while button is pressed 
+//            the debouncer will set its output high until 
+//            the button is released 
 always @(posedge clk or posedge reset) begin
     if (reset) counter <= 24'b0;        
     else if(button_in) begin
@@ -31,7 +34,8 @@ always @(counter) begin
         l2p_in = 1'b0;
 end
 
-// FSM type: Moore Machine
+// Level to pulse: convert debouncers output to a single
+//                 pulse
 always @(posedge clk or posedge reset) begin
     if (reset) current_state <= idle;
     else current_state <= next_state;

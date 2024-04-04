@@ -30,9 +30,6 @@
    assign char0 = fp_out[31:24];
    assign char1 = fp_out[23:16];
 
-   // Anode driver
-   //anodeDriver anodeDriver(.clk(clk), .reset(rst), .an0(an0), .an1(an1));
-
    // Instantiate the 7segment display output 0 
    sevenSegDispDriver sevenSegDispDriver0(.clk(clk), .rst(rst), .char(char0), .anode(an0), .LED({a0, b0, c0, d0, e0, f0, g0}));
 
