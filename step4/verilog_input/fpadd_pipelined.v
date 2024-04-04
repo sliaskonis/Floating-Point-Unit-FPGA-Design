@@ -27,8 +27,7 @@ module fpadd_pipelined (input clk,
 	reg [22:0] temp_mantissa_A, temp_mantissa_B;	// Mantissa bits
 	reg [24:0] mantissa_temp, mantissa_A, mantissa_B, mantissa_B_shifted, reg_mantissa_A, reg_mantissa_B_shifted;	// New mantissas
 	reg [7:0] temp_exp_A, temp_exp_B;	// Temporary variables
-	reg [24:0] NORMMEM_mantissa_temp;	// Normalized mantissa
-	reg [7:0] NORMMEM_exp;	// Normalized exponent
+	
 	// Register the two inputs, and use A and B in the combinational logic. 
 	always @ (posedge clk or posedge reset)
 		begin

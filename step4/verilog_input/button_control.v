@@ -31,16 +31,6 @@ always @(counter) begin
         l2p_in = 1'b0;
 end
 
-// awlays @(posedge clk) begin
-//     q1 <= button_in;
-// end
-
-// always @(posedge clk) begin
-//     q2 <= q1;
-// end
-
-// assign l2p_in = q1 & q2;
-
 // FSM type: Moore Machine
 always @(posedge clk or posedge reset) begin
     if (reset) current_state <= idle;
