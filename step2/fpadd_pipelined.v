@@ -128,13 +128,9 @@ module fpadd_pipelined (input clk,
 								.normalized_exp(normalized_exp));
 
 	// Combine the sign, exponent, and mantissa to form the result
-	always @(normalized_exp or normalized_mantissa or A or B or mantissa_temp or exp or reg_sign_A)
+	always @(normalized_exp or normalized_mantissa or mantissa_temp or exp or reg_sign_A)
 	begin
-		if (A == 32'b0)
-			result = B;
-		else if (B == 32'b0)
-			result = A;
-		else if (mantissa_temp == 0 && exp == 0)
+		if (mantissa_temp == 0 && exp == 0)
 			result = 32'b0;
 		else
 			result = {reg_sign_A, normalized_exp, normalized_mantissa};
