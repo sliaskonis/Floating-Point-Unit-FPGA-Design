@@ -52,9 +52,9 @@ LEDdecoder LEDdecoder0(char0, digit0);
 LEDdecoder LEDdecoder1(char1, digit1);
 
 // Control counter's value
-always @(posedge clk or posedge reset) 
+always @(posedge clk or posedge rst) 
 begin 
-    if (reset)
+    if (rst)
         count <= 5'b11111;                   // When Reset is set to 1 initialize counter to value 4'b1111
     else 
         count <= countNext;                  // Assign counter its next value               

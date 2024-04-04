@@ -8,7 +8,7 @@ module fp_normalizer (
   reg [22:0] zero_count;
 
   // Priority encoder: Count the number of leading zeros in the mantissa
-  always @(mantissa_temp or exp) begin
+  always @(*) begin
         if (mantissa_temp[24]) zero_count = 25;
         else if (mantissa_temp[23]) zero_count = 0;
         else if (mantissa_temp[22]) zero_count = 1;
@@ -36,8 +36,8 @@ module fp_normalizer (
         else if (mantissa_temp[0]) zero_count = 23;
         else zero_count = 24; // All bits are zero
     end
-
-    always @(mantissa_temp or zero_count) begin
+    
+    always @(*) begin
       if (zero_count == 24) begin
         normalized_mantissa = 0;
         normalized_exp = 0;

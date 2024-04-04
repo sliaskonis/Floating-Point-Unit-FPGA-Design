@@ -21,9 +21,9 @@
    assign char1 = fp_out[23:16];
 
    // Instantiate the 7segment display output 0 
-   sevenSegDispDriver sevenSegDispDriver0(.char(char0), .anode(an0), .LED({a0, b0, c0, d0, e0, f0, g0}));
+   sevenSegDispDriver sevenSegDispDriver0(.clk(clk), .rst(rst), .char(char0), .anode(an0), .LED({a0, b0, c0, d0, e0, f0, g0}));
 
    // Instantiate the 7segment display output 1
-   sevenSegDispDriver sevenSegDispDriver1(.char(char1), .anode(an1), .LED({a1, b1, c1, d1, e1, f1, g1}));
+   sevenSegDispDriver sevenSegDispDriver1(.clk(clk), .rst(rst), .char(char1), .anode(an1), .LED({a1, b1, c1, d1, e1, f1, g1}));
    
 endmodule

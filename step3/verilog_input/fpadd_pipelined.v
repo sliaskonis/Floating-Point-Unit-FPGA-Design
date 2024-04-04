@@ -22,11 +22,16 @@ module fpadd_pipelined (input clk,
 
 	reg [31:0] A, B;	// Inputs
 	reg [31:0] result;	// Output
-	reg sign_A, sign_B, reg_sign_A, reg_sign_B;	// Sign bits
-	reg [7:0] exp_A, exp_B, exp, reg_exp_A, reg_exp_B;	// Exponent bits
+	reg sign_max, sign_min, reg_sign_max, reg_sign_min;	// Sign bits
+	reg [7:0] exp_max, exp_min, exp, reg_exp_max, reg_exp_min;	// Exponent bits
 	reg [22:0] temp_mantissa_A, temp_mantissa_B;	// Mantissa bits
-	reg [24:0] mantissa_temp, mantissa_A, mantissa_B, mantissa_B_shifted, reg_mantissa_A, reg_mantissa_B_shifted;	// New mantissas
-	reg [7:0] temp_exp_A, temp_exp_B;	// Temporary variables
+	reg [24:0] mantissa_temp, mantissa_max, mantissa_min, mantissa_min_shifted, reg_mantissa_max, reg_mantissa_min_shifted;	// New mantissas
+	reg [7:0] temp_exp_A, temp_exp_B;
+	reg reg_max_is_zero, reg_min_is_zero;
+
+	wire [7:0] normalized_exp;
+	wire [22:0] normalized_mantissa;
+	wire max_is_zero, min_is_zero;
 	
 	// Register the two inputs, and use A and B in the combinational logic. 
 	always @ (posedge clk or posedge reset)
@@ -48,94 +53,101 @@ module fpadd_pipelined (input clk,
 	//                       (b) shift appropriately the mantissa if necessary, 
 	//                       (c) add the two mantissas, and
 	//                       (d) perform post-normalization. 
-	//                           Make sure to check explicitly for zero output. 	
-	always@ (A or B)
-		begin
-			temp_exp_A = A[30:23];
-			temp_exp_B = B[30:23];
-	        temp_mantissa_A = A[22:0];
-		    temp_mantissa_B = B[22:0];
-			// Find the larger number and extract sign, exponent and mantissa for A and B
-			if (temp_exp_A > temp_exp_B || (temp_exp_A == temp_exp_B && temp_mantissa_A >= temp_mantissa_B)) begin	// A >= B
-				sign_A = A[31];
-				sign_B = B[31];
-				exp_A = A[30:23];
-				exp_B = B[30:23];
-				mantissa_A = {2'b01, A[22:0]};
-				mantissa_B = {2'b01, B[22:0]};
-			end
-			else begin																							// B > A
-				sign_A = B[31];
-				sign_B = A[31];
-				exp_A = B[30:23];
-				exp_B = A[30:23];
-				mantissa_A = {2'b01, B[22:0]};
-				mantissa_B = {2'b01, A[22:0]};
-			end
-		end
+	//                           Make sure to check explicitly for zero output.
 	
-	// Adjust the mantissas
-	always @(mantissa_B or exp_A or exp_B)
-	begin
-		mantissa_B_shifted = (mantissa_B >> (exp_A - exp_B));
+	always @(*) begin
+		temp_exp_A = A[30:23];
+		temp_exp_B = B[30:23];
+		temp_mantissa_A = A[22:0];
+		temp_mantissa_B = B[22:0];
+	end
+	
+	always@ (*) begin
+		// Find the larger number and extract sign, exponent and mantissa for A and B
+		if (temp_exp_A > temp_exp_B || (temp_exp_A == temp_exp_B && temp_mantissa_A >= temp_mantissa_B)) begin	// |A| >= |B|
+			sign_max = A[31];
+			sign_min = B[31];
+			exp_max = A[30:23];
+			exp_min = B[30:23];
+			mantissa_max = {2'b01, A[22:0]};
+			mantissa_min = {2'b01, B[22:0]};
+		end
+		else begin																							// |B| > |A|
+			sign_max = B[31];
+			sign_min = A[31];
+			exp_max = B[30:23];
+			exp_min = A[30:23];
+			mantissa_max = {2'b01, B[22:0]};
+			mantissa_min = {2'b01, A[22:0]};
+		end
 	end
 
+	assign min_is_zero = ( (exp_min == 0) && (mantissa_min[22:0] == 0) );	// Important flag to ignore concatenated 1 in mantissas
+	assign max_is_zero = ( (exp_max == 0) && (mantissa_max[22:0] == 0) );	// For this to be true, min_is_zero is also true (since 0 has the smallest possible absolute value)
+
+	// Adjust the mantissas
+	always @(*) begin
+		mantissa_min_shifted = (mantissa_min >> (exp_max - exp_min));
+	end
+
+	/****************** PIPELINE ******************/
 	always @(posedge clk or posedge reset) begin
 		if(reset) begin
-			reg_mantissa_A <= 0;
-			reg_mantissa_B_shifted <= 0;
-			reg_exp_A <= 0;
-			reg_exp_B <= 0;
-			reg_sign_A <= 0;
-			reg_sign_B <= 0;
+			reg_mantissa_max <= 0;
+			reg_mantissa_min_shifted <= 0;
+			reg_exp_max <= 0;
+			reg_exp_min <= 0;
+			reg_sign_max <= 0;
+			reg_sign_min <= 0;
+			reg_max_is_zero <= 1'b0;
+			reg_min_is_zero <= 1'b0;
 		end
 		else begin
-			reg_mantissa_A <= mantissa_A;
-			reg_mantissa_B_shifted <= mantissa_B_shifted;
-			reg_exp_A <= exp_A;
-			reg_exp_B <= exp_B;
-			reg_sign_A <= sign_A;
-			reg_sign_B <= sign_B;
+			reg_mantissa_max <= mantissa_max;
+			reg_mantissa_min_shifted <= mantissa_min_shifted;
+			reg_exp_max <= exp_max;
+			reg_exp_min <= exp_min;
+			reg_sign_max <= sign_max;
+			reg_sign_min <= sign_min;
+			reg_max_is_zero <= max_is_zero;
+			reg_min_is_zero <= min_is_zero;
 		end
-		
 	end
 
-	// Add the mantissas 
-	always @(reg_mantissa_A or reg_mantissa_B_shifted or reg_sign_A or reg_sign_B)
-		begin
-			if (reg_sign_A == reg_sign_B)
-				mantissa_temp = reg_mantissa_A + reg_mantissa_B_shifted;
-			else
-				mantissa_temp = reg_mantissa_A - reg_mantissa_B_shifted;
-		end
-	
-	// Handle exponent of the result
-	always @(reg_exp_A or reg_exp_B or mantissa_temp or reg_sign_A or reg_sign_B)
-	begin
-		if (reg_exp_A == reg_exp_B && mantissa_temp == 0 && reg_sign_A != reg_sign_B)
+	// Add the mantissas
+	always @(*) begin
+		if(reg_min_is_zero)	// min zero means mantissa 
+			mantissa_temp = reg_mantissa_max;
+		else if (reg_sign_max == reg_sign_min)
+			mantissa_temp = reg_mantissa_max + reg_mantissa_min_shifted;
+		else
+			mantissa_temp = reg_mantissa_max - reg_mantissa_min_shifted;
+	end
+
+	// Handle exp result
+	always @(*) begin
+		if (reg_exp_max == reg_exp_min && mantissa_temp == 0) //&& reg_sign_max != reg_sign_min)
 			exp = 8'b00000000;
 		else
-			exp = reg_exp_A;
+			exp = reg_exp_max;
 	end
 
-	wire [7:0] normalized_exp;
-	wire [22:0] normalized_mantissa;
+	// Normalize final number
 	fp_normalizer fp_normalizer(.mantissa_temp(mantissa_temp),
 								.exp(exp),
 								.normalized_mantissa(normalized_mantissa),
 								.normalized_exp(normalized_exp));
 
 	// Combine the sign, exponent, and mantissa to form the result
-	always @(normalized_exp or normalized_mantissa or A or B or mantissa_temp or exp or reg_sign_A)
-	begin
-		if (A == 32'b0)
-			result = B;
-		else if (B == 32'b0)
-			result = A;
+	always @(*)	begin
+		if (reg_min_is_zero)
+			result = {reg_sign_max, reg_exp_max, reg_mantissa_max[22:0]};
+		//else if (reg_max_is_zero)
+		//	result = {reg_sign_min, reg_exp_min, reg_mantissa_min_shifted}; 
 		else if (mantissa_temp == 0 && exp == 0)
 			result = 32'b0;
 		else
-			result = {reg_sign_A, normalized_exp, normalized_mantissa};
+			result = {reg_sign_max, normalized_exp, normalized_mantissa};
 	end
 
 endmodule
