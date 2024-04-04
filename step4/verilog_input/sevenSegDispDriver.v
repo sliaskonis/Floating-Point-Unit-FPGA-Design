@@ -30,11 +30,14 @@ begin
 end
 endmodule
 
-module sevenSegDispDriver(char, anode, LED);
+module sevenSegDispDriver(clk, rst, char, anode, LED);
 
+input clk, rst;
 input [7:0] char;
-input anode;
+output reg anode;
 output reg [6:0] LED;
+
+reg [4:0] count;
 
 wire [6:0] digit0, digit1;
 wire [3:0] char0, char1;
@@ -44,6 +47,27 @@ assign char1 = char[3:0];
 
 LEDdecoder LEDdecoder0(char0, digit0);
 LEDdecoder LEDdecoder1(char1, digit1);
+
+wire [4:0] countNext;                       // countNext -> counter's next value
+
+assign countNext = count - 5'b00001;
+
+// Control counter's value
+always @(posedge clk or posedge rst) 
+begin 
+    if (rst)
+        count <= 5'b11111;                   // When Reset is set to 1 initialize counter to value 4'b1111
+    else 
+        count <= countNext;                  // Assign counter its next value               
+end
+
+always @(count)                                
+begin                                           
+    if (count[4] == 1'b1)
+        anode = 1'b0;
+    else
+        anode = 1'b1;
+end
 
 always @(anode or digit0 or digit1)
 begin

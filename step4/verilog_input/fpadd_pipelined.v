@@ -118,18 +118,7 @@ module fpadd_pipelined (input clk,
 			exp = reg_exp_A;
 	end
 
-	// Normalize pipelined
-	always @(posedge clk or posedge reset) begin
-		if (reset == 1'b1) begin
-			NORMMEM_mantissa_temp <= 25'b0;
-			NORMMEM_exp <= 8'b0;
-		end
-		else begin
-			NORMMEM_mantissa_temp <= mantissa_temp;
-			NORMMEM_exp <= exp;
-		end
-	end
-
+	// Mantissa Normalizer
 	wire [7:0] normalized_exp;
 	wire [22:0] normalized_mantissa;
 	fp_normalizer fp_normalizer(.mantissa_temp(mantissa_temp),

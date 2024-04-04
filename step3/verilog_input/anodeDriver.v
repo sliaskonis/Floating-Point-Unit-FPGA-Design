@@ -27,14 +27,10 @@ begin
         an0 = 1'b0;
         an1 = 1'b0;
     end
-    else begin//if (count[4] == 1'b0)begin
+    else begin
         an0 = 1'b1;
         an1 = 1'b1;
     end
-    //else begin
-    //    an0 = 1;
-    //    an1 = 1;
-    //end
 end
 
 endmodule
