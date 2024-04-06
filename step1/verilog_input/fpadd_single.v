@@ -20,31 +20,31 @@ module fpadd_single (input clk,
                      input [31:0]reg_B,  
 		     output reg[31:0] out);
 
-	reg [31:0] A, B;	// Inputs
-	reg [31:0] result;	// Output
-	reg sign_A, sign_B;	// Sign bits
-	reg [7:0] exp_A, exp_B, exp;	// Exponent bits
-	reg [22:0] temp_mantissa_A, temp_mantissa_B;	// Mantissa bits
-	reg [24:0] mantissa_temp, mantissa_A, mantissa_B, mantissa_B_shifted;	// New mantissas
-	reg [7:0] temp_exp_A, temp_exp_B;	// Temporary variables
-
-	wire [7:0] normalized_exp;
+	reg [31:0] A, B, result;						// Inputs and output
+	reg max_num_sign, min_num_sign;					// Sign bits
+	reg [7:0] temp_exp_A, temp_exp_B;				// Temp vars for exponent bits
+	reg [7:0] max_num_exp, min_num_exp, exp;		// Exponent bits
+	reg [22:0] temp_mantissa_A, temp_mantissa_B;	// Temp vars for mantissa bits
+	reg [24:0] mantissa_temp, max_num_mantissa, min_num_mantissa, mantissa_B_shifted;	// New mantissas
+	
 	wire [22:0] normalized_mantissa;
-
+	wire [7:0] normalized_exp;
+	
 	// Register the two inputs, and use A and B in the combinational logic. 
 	always @ (posedge clk or posedge reset)
 		begin
 			if (reset == 1'b1)
-			begin
-				A <= 32'b0;
-				B <= 32'b0;
-				out <= 32'b0;
-			end
-			else begin
-				A <= reg_A;
-				B <= reg_B;
-				out <= result;
-			end
+				begin
+					A <= 32'b0;
+					B <= 32'b0;
+					out <= 32'b0;
+				end
+			else 
+				begin
+					A <= reg_A;
+					B <= reg_B;
+					out <= result;
+				end
 		end
 
 	//Combinational Logic to (a) compare and adjust the exponents, 
@@ -52,73 +52,71 @@ module fpadd_single (input clk,
 	//                       (c) add the two mantissas, and
 	//                       (d) perform post-normalization. 
 	//                           Make sure to check explicitly for zero output. 	
-	always@ (A or B)
+	
+	// Compare the two numbers and determine which one is the maximum and which one is the minimum
+	always@ (*)
 		begin
+
+			// Store numbers in temporary variables
 			temp_exp_A = A[30:23];
 			temp_exp_B = B[30:23];
 	        temp_mantissa_A = A[22:0];
 		    temp_mantissa_B = B[22:0];
-			// Find the larger number and extract sign, exponent and mantissa for A and B
-			if (temp_exp_A > temp_exp_B || (temp_exp_A == temp_exp_B && temp_mantissa_A >= temp_mantissa_B)) begin	// A >= B
-				sign_A = A[31];
-				sign_B = B[31];
-				exp_A = A[30:23];
-				exp_B = B[30:23];
-				mantissa_A = {2'b01, A[22:0]};
-				mantissa_B = {2'b01, B[22:0]};
-			end
-			else begin																							// B > A
-				sign_A = B[31];
-				sign_B = A[31];
-				exp_A = B[30:23];
-				exp_B = A[30:23];
-				mantissa_A = {2'b01, B[22:0]};
-				mantissa_B = {2'b01, A[22:0]};
-			end
+
+			if (temp_exp_A > temp_exp_B || (temp_exp_A == temp_exp_B && temp_mantissa_A >= temp_mantissa_B)) 
+				begin	// A >= B
+					max_num_sign = A[31];
+					min_num_sign = B[31];
+					max_num_exp = A[30:23];
+					min_num_exp = B[30:23];
+					max_num_mantissa = {2'b01, A[22:0]};
+					min_num_mantissa = {2'b01, B[22:0]};
+				end
+			else 
+				begin																							// B > A
+					max_num_sign = B[31];
+					min_num_sign = A[31];
+					max_num_exp = B[30:23];
+					min_num_exp = A[30:23];
+					max_num_mantissa = {2'b01, B[22:0]};
+					min_num_mantissa = {2'b01, A[22:0]};
+				end
 		end
 	
-	// Adjust the mantissas
-	always @(mantissa_B or exp_A or exp_B)
-	begin
-		mantissa_B_shifted = (mantissa_B >> (exp_A - exp_B));
-	end
+	// Adjust the mantissas based on the difference in exponents (of the bigger number)
+	always @(*)
+		begin
+			mantissa_B_shifted = (min_num_mantissa >> (max_num_exp - min_num_exp));
+		end
 
-	// Add the mantissas 
-	always @(mantissa_A or mantissa_B_shifted or sign_A or sign_B)
-	begin
-		if (sign_A == sign_B)
-			mantissa_temp = mantissa_A + mantissa_B_shifted;
-		else
-			mantissa_temp = mantissa_A - mantissa_B_shifted;
-	end
+	// Addition 
+	always @(*)
+		begin
+			if (max_num_sign == min_num_sign)
+				mantissa_temp = max_num_mantissa + mantissa_B_shifted;
+			else
+				mantissa_temp = max_num_mantissa - mantissa_B_shifted;
+		end
 
-	// Handle exponent of result
-	always @(exp_A or exp_B or mantissa_temp or sign_A or sign_B)
-	begin
-		if (exp_A == exp_B && mantissa_temp == 0 && sign_A != sign_B)  // Special case: subtraction of numbers that result to 0
-			exp = 8'b00000000;
-		else
-			exp = exp_A;
-	end
-
-	// Normalize final number
+	// Fp_normalized: module that checks and normalizes 
+	//                the result if necessary
 	fp_normalizer fp_normalizer(.mantissa_temp(mantissa_temp),
-								.exp(exp),
+								.exp(max_num_exp),
 								.normalized_mantissa(normalized_mantissa),
 								.normalized_exp(normalized_exp));
 
-	// Combine the sign, exponent, and mantissa to form the result
-	always @(normalized_exp or normalized_mantissa or A or B or mantissa_temp or exp or sign_A)
-	begin
-		if (A == 32'b0)
-			result = B;
-		else if (B == 32'b0)
-			result = A;
-		else if (mantissa_temp == 0 && exp == 0)
-			result = 32'b0;
-		else
-			result = {sign_A, normalized_exp, normalized_mantissa};
-	end
+	// Combine the sign, exponent, and mantissa to form the final result
+	always @(*)
+		begin
+			if (A == 32'b0)
+				result = B;
+			else if (B == 32'b0)
+				result = A;
+		 	else if (max_num_exp == min_num_exp && mantissa_temp == 0 && max_num_sign != min_num_sign)  // Special case: subtraction of numbers that result to 0
+				result = 32'b0;
+			else
+				result = {max_num_sign, normalized_exp, normalized_mantissa};
+		end
 
 endmodule
 
