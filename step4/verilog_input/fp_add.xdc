@@ -258,8 +258,8 @@ set_property IOSTANDARD LVCMOS33 [get_ports clk]
 set_property PACKAGE_PIN P16 [get_ports rst]
 set_property IOSTANDARD LVCMOS33 [get_ports rst]
 
-set_property PACKAGE_PIN R18 [get_ports button_in]
-set_property IOSTANDARD LVCMOS33 [get_ports button_in]
+set_property PACKAGE_PIN R18 [get_ports noisy_level]
+set_property IOSTANDARD LVCMOS33 [get_ports noisy_level]
 
 # set_property PACKAGE_PIN T18 [get_ports noisy_level]
 # set_property IOSTANDARD LVCMOS33 [get_ports noisy_level]

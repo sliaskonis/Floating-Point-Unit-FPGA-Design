@@ -19,7 +19,7 @@
    assign char1 = fp_out[23:16];
    
    // Instantiate the button control
-   button_control button_control(.clk(clk), .reset(rst), .button_in(noisy_level), .button_out(button_out));
+   button_control button_control(.clk(clk), .reset(rst), .noisy_level(noisy_level), .button_out(button_out));
 
    // Instantiate the data memory
    DataMemory data_memory(.clk(clk), .rst(rst), .button(button_out), .out_a(in_A), .out_b(in_B));
