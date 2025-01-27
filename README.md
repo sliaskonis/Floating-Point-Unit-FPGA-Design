@@ -1,7 +1,7 @@
 # FPGA Design of a Floating Point Unit (FPU)
 
 ## Introduction
-The objective of this project is to design, simulate, and implement a Floating Point Adder on a Zedboard FPGA.
+The objective of this project is to design, simulate, and implement a Floating Point Unit on a Zedboard FPGA.
 
 ## Lab Steps
 The lab consists of the following steps:
